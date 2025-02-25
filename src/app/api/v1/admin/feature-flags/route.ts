@@ -10,6 +10,8 @@ import {
   addFeatureFlag,
   enableFeatureFlagByName,
   disableFeatureFlagByName,
+  featureFlagNames,
+  getEnabledFeatureFlags,
 } from "../../../../../db/tables/featureFlags";
 
 import { isAdmin } from "../../../utils/auth";
@@ -25,7 +27,11 @@ export async function GET() {
       return NextResponse.json({ success: false }, { status: 500 });
     }
   } else {
-    return NextResponse.json({ success: false }, { status: 401 });
+    const flagNamesInDb = await getEnabledFeatureFlags({ isSignedOut: true });
+    const availableFlags = featureFlagNames;
+    return NextResponse.json(
+      availableFlags.filter((flag) => flagNamesInDb.indexOf(flag) !== -1),
+    );
   }
 }
 
