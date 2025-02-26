@@ -52,21 +52,24 @@ export async function up(knex) {
     "allow_list",
     "modified_at as created_at",
   );
-  const fakeFirstuser = await knex("subscribers")
-    .select("id")
-    .whereLike("primary_email", "%@mozilla.com")
-    .first();
-  if (!fakeFirstuser) {
-    throw new Error(
-      "Couldn't find a subscriber with an @mozilla.com email address to attribute pre-existing feature flags to.",
+
+  if (existingFeatureFlags.length > 0) {
+    const fakeFirstuser = await knex("subscribers")
+      .select("id")
+      .whereLike("primary_email", "%@mozilla.com")
+      .first();
+    if (!fakeFirstuser) {
+      throw new Error(
+        "Couldn't find a subscriber with an @mozilla.com email address to attribute pre-existing feature flags to.",
+      );
+    }
+    await knex("feature_flag_events").insert(
+      existingFeatureFlags.map((flag) => ({
+        ...flag,
+        created_by_subscriber_id: fakeFirstuser.id,
+      })),
     );
   }
-  await knex("feature_flag_events").insert(
-    existingFeatureFlags.map((flag) => ({
-      ...flag,
-      created_by_subscriber_id: fakeFirstuser.id,
-    })),
-  );
 }
 /**
  * @param { import("knex").Knex } knex
